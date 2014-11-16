@@ -2,18 +2,19 @@
 
 separate()
 {
-    local orig_win_name=$(tmux display-message -p '#W')
-    local win_name=tmp-$(date +%s)
+    local orig_win_name=$(tmux display-message -p '#W') win_name=tmp-$(date +%s)
     tmux rename-window $win_name
 
     local base_pane_idx=$(tmux display-message -p '#P')
     local next_pane_idx=$base_pane_idx
 
+    [ $vertical_switch == 1 ] && local topt=-h || local topt=-v
+
     for cmd in $@
     do
         if [ $next_pane_idx -ne $base_pane_idx ]; then
             local size=$((100 / ($# + 1 - ($next_pane_idx - $base_pane_idx))))
-            tmux split-window -v -t $win_name.$base_pane_idx -p $size
+            tmux split-window $topt -t $win_name.$base_pane_idx -p $size
         fi
         tmux send-keys -t $win_name.$next_pane_idx "$cmd" C-m
 
@@ -23,22 +24,46 @@ separate()
     tmux rename-window $orig_win_name
 }
 
+_help()
+{
+    cat <<EOF
+Usage:
+    $(basename $0) [options] [FILE]
+
+Options:
+    -h       show this help message
+    -v       separate vertically
+EOF
+}
+
 if ! tmux -V 1>/dev/null 2>&1 ; then
-    echo 'tmux not installed' 1>&2
+    echo 'tmux not installed' >&2
+    exit 0
+elif ! tmux display-message -p 1>/dev/null 2>&1 ; then
+    echo 'start a tmux session' >&2
     exit 0
 fi
 
-if { [ -z $1 ] && [ -t 0 ] ; } || [ "$1" == '-h' ] || [ "$1" == '--help' ]
-then
-    cat <<EOF
-Usage:
-    separate [options] [FILE]
+vertical_switch=0
+while getopts 'hv' opt
+do
+    case $opt in
+    h)  _help
+        exit 0
+        ;;
+    v)  vertical_switch=1
+        ;;
+    ?)  _help
+        exit 0
+        ;;
+    esac
+done
+shift $(($OPTIND - 1))
 
-Options:
-    -h, --help          show this help message
-    --vertical          vertical split
-    --horizontal        horizontal split
-EOF
+# FILE not specified and stdin is a terminal
+if { [ -z $1 ] && [ -t 0 ] ; }
+then
+    _help
     exit 0
 fi
 
