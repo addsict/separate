@@ -1,17 +1,20 @@
 separate
 ===
-do commands separately with tmux
+Each command, each window
 
 Usage
 ---
-```
+```sh
 separate [options] [FILE]
 ```
 
 Options
 ---
 ```
--h, --help          show this help message
---vertical          vertical split
---horizontal        horizontal split
+-h       show help message
+-v       separate vertically
 ```
+
+Requirement
+---
+[tmux](http://tmux.sourceforge.net/) must be installed.
