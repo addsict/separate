@@ -36,10 +36,14 @@ Options:
 EOF
 }
 
-if ! tmux -V 1>/dev/null 2>&1 ; then
+# pipe to cat to avoid linux epoll bug
+# cf. http://sourceforge.net/p/tmux/mailman/message/27713196/
+if { tmux -V 2>&1 | cat >/dev/null ; } && [ ${PIPESTATUS[0]} -ne 0 ]
+then
     echo 'tmux not installed' >&2
     exit 0
-elif ! tmux display-message -p 1>/dev/null 2>&1 ; then
+elif { tmux info 2>&1 | cat >/dev/null ; } && [ ${PIPESTATUS[0]} -ne 0 ]
+then
     echo 'start a tmux session' >&2
     exit 0
 fi
