@@ -8,27 +8,31 @@ separate()
     local base_pane_idx=$(tmux display-message -p '#P')
     local next_pane_idx=$base_pane_idx
 
-    [ $vertical_switch == 1 ] && local topt=-h || local topt=-v
+    if [ $vertical_switch == 1 ] ; then
+        local topt=-h
+    else
+        local topt=-v
+    fi
 
-    for cmd in $@
+    for cmd in "$@"
     do
         if [ $next_pane_idx -ne $base_pane_idx ]; then
-            local size=$((100 / ($# + 1 - ($next_pane_idx - $base_pane_idx))))
+            local size=$((100 / ($# + 1 - (next_pane_idx - base_pane_idx))))
             tmux split-window $topt -t $win_name.$base_pane_idx -p $size
         fi
         tmux send-keys -t $win_name.$next_pane_idx "$cmd" C-m
 
-        next_pane_idx=$(($next_pane_idx + 1))
+        next_pane_idx=$((next_pane_idx + 1))
     done
 
-    tmux rename-window $orig_win_name
+    tmux rename-window "$orig_win_name"
 }
 
 _help()
 {
     cat <<EOF
 Usage:
-    $(basename $0) [options] [FILE]
+    $(basename "$0") [options] [FILE]
 
 Options:
     -h       show this help message
@@ -65,7 +69,7 @@ done
 shift $(($OPTIND - 1))
 
 # FILE not specified and stdin is a terminal
-if { [ -z $1 ] && [ -t 0 ] ; }
+if { [ -z "$1" ] && [ -t 0 ] ; }
 then
     _help
     exit 0
@@ -73,9 +77,9 @@ fi
 
 IFS=$'\n'
 if [ "$1" ] ; then
-    cmds=(`cat "$1"`)
+    cmds=($(cat "$1"))
 else
-    cmds=(`cat`)
+    cmds=($(cat))
 fi
 
 separate "${cmds[@]}"
